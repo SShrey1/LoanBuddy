@@ -8,14 +8,23 @@
 import SwiftUI
 
 struct ContentView: View {
+    @StateObject private var appState = LoanApplicationState()
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    @State private var isLoggedIn = false
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        Group {
+            if !hasSeenOnboarding {
+                OnboardingView()
+            } else if !isLoggedIn {
+                LoginView(isLoggedIn: $isLoggedIn)
+            } else {
+                NavigationStack {
+                    HomeView()
+                }
+            }
         }
-        .padding()
+        .environmentObject(appState)
     }
 }
 
