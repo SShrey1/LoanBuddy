@@ -1,4 +1,5 @@
 import SwiftUI
+import _PhotosUI_SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject private var appState: LoanApplicationState
@@ -19,6 +20,9 @@ struct HomeView: View {
                 if !appState.userData.applicationStatus.rawValue.isEmpty {
                     applicationStatusView
                 }
+                
+                // Document Upload Section
+                DocumentUploadSection()
                 
                 // Recent Activity
                 recentActivityView
@@ -277,6 +281,137 @@ struct ApplicationStatusCard: View {
         case .needsMoreInfo: return .orange
         case .inProgress: return .blue
         case .notStarted: return .gray
+        }
+    }
+}
+
+struct DocumentUploadSection: View {
+    @EnvironmentObject private var appState: LoanApplicationState
+    @State private var selectedItem: PhotosPickerItem?
+    @State private var selectedDocumentType: DocumentType?
+    @State private var showingCamera = false
+    @State private var showingUploadOptions = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("My Documents")
+                .font(AppStyle.TextStyle.heading)
+            
+            ForEach(DocumentType.allCases, id: \.self) { documentType in
+                documentCard(for: documentType)
+            }
+        }
+        .padding(.horizontal)
+        .confirmationDialog(
+            "Choose Upload Method",
+            isPresented: $showingUploadOptions,
+            titleVisibility: .visible
+        ) {
+            Button("Take Photo") {
+                showingCamera = true
+            }
+            
+            PhotosPicker(
+                selection: $selectedItem,
+                matching: .images
+            ) {
+                Text("Choose from Gallery")
+            }
+        }
+        .sheet(isPresented: $showingCamera) {
+            CameraView { capturedImage in
+                if let documentType = selectedDocumentType {
+                    handleDocumentUpload(documentType: documentType, image: capturedImage)
+                }
+                showingCamera = false
+            }
+        }
+        .onChange(of: selectedItem) { _ in
+            if let documentType = selectedDocumentType {
+                handlePhotosPicker(documentType: documentType)
+            }
+        }
+    }
+    
+    private func documentCard(for documentType: DocumentType) -> some View {
+        let document = appState.userData.documents.first { $0.type == documentType }
+        
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: document?.isVerified == true ? "checkmark.circle.fill" : "doc.fill")
+                    .foregroundColor(document?.isVerified == true ? .green : AppStyle.primaryColor)
+                    .font(.title2)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(documentType.rawValue)
+                        .font(AppStyle.TextStyle.body)
+                    
+                    if document?.isVerified == true {
+                        Text("Verified")
+                            .font(AppStyle.TextStyle.caption)
+                            .foregroundColor(.green)
+                    } else {
+                        Text(document == nil ? "Not uploaded" : "Pending verification")
+                            .font(AppStyle.TextStyle.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Spacer()
+                
+                Button(action: {
+                    selectedDocumentType = documentType
+                    showingUploadOptions = true
+                }) {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(AppStyle.primaryColor)
+                }
+            }
+            
+            if let document = document {
+                if let imageURL = document.imageURL {
+                    AsyncImage(url: imageURL) { image in
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    } placeholder: {
+                        Color.gray.opacity(0.2)
+                    }
+                    .frame(height: 120)
+                    .clipShape(RoundedRectangle(cornerRadius: AppStyle.cornerRadius))
+                }
+            }
+        }
+        .padding()
+        .background(AppStyle.CardStyle.shadow)
+    }
+    
+    private func handlePhotosPicker(documentType: DocumentType) {
+        guard let selectedItem = selectedItem else { return }
+        
+        Task {
+            if let data = try? await selectedItem.loadTransferable(type: Data.self),
+               let image = UIImage(data: data) {
+                handleDocumentUpload(documentType: documentType, image: image)
+            }
+        }
+    }
+    
+    private func handleDocumentUpload(documentType: DocumentType, image: UIImage) {
+        // Here you would normally upload the image to your server
+        // For demo, we'll just create a dummy document
+        let newDocument = Document(
+            type: documentType,
+            imageURL: URL(string: "https://example.com/dummy.jpg"),
+            isVerified: false
+        )
+        
+        DispatchQueue.main.async {
+            appState.userData.documents.removeAll { $0.type == documentType }
+            appState.userData.documents.append(newDocument)
+            selectedDocumentType = nil
+            selectedItem = nil
         }
     }
 }

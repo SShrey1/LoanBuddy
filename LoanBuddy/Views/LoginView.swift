@@ -4,7 +4,7 @@ struct LoginView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var showingSignUp = false
-    @Binding var isLoggedIn: Bool
+    @AppStorage("isLoggedIn") private var isLoggedIn = false
     @State private var isAnimating = false
     
     var body: some View {

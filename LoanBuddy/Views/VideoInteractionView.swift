@@ -37,7 +37,7 @@ struct VideoInteractionView: View {
         }
         .background(AppStyle.backgroundColor)
         .sheet(isPresented: $showingCamera) {
-            CameraView(videoURL: $recordedVideoURL)
+            VideoRecordingView(videoURL: $recordedVideoURL)
         }
     }
     

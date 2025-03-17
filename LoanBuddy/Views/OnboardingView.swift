@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct OnboardingView: View {
-    @AppStorage("hasSeenOnboarding") var hasSeenOnboarding = false
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var currentPage = 0
     
     let pages: [(image: String, title: String, description: String)] = [
@@ -53,6 +53,10 @@ struct OnboardingView: View {
                     .padding(.bottom, 40)
                 }
             }
+        }
+        .onAppear {
+            // Ensure onboarding starts fresh
+            currentPage = 0
         }
     }
 }

@@ -1,72 +1,39 @@
 import SwiftUI
 import AVFoundation
+import UIKit
 
-struct CameraView: View {
-    @Binding var videoURL: URL?
-    @Environment(\.dismiss) private var dismiss
-    @StateObject private var camera = CameraModel()
+struct CameraView: UIViewControllerRepresentable {
+    var onImageCaptured: (UIImage) -> Void
     
-    var body: some View {
-        ZStack {
-            CameraPreview(camera: camera)
-                .ignoresSafeArea()
-            
-            VStack {
-                Spacer()
-                
-                HStack(spacing: 20) {
-                    // Cancel Button
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Image(systemName: "xmark")
-                            .font(.title)
-                            .foregroundColor(.white)
-                            .padding()
-                    }
-                    
-                    // Record Button
-                    Button(action: {
-                        if camera.isRecording {
-                            camera.stopRecording()
-                        } else {
-                            camera.startRecording()
-                        }
-                    }) {
-                        ZStack {
-                            Circle()
-                                .fill(camera.isRecording ? .red : .white)
-                                .frame(width: 65, height: 65)
-                            
-                            if camera.isRecording {
-                                Circle()
-                                    .stroke(.white, lineWidth: 4)
-                                    .frame(width: 75, height: 75)
-                            }
-                        }
-                    }
-                    
-                    // Flip Camera
-                    Button(action: {
-                        camera.flipCamera()
-                    }) {
-                        Image(systemName: "camera.rotate.fill")
-                            .font(.title)
-                            .foregroundColor(.white)
-                            .padding()
-                    }
-                }
-                .padding(.bottom)
-            }
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.delegate = context.coordinator
+        picker.sourceType = .camera
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onImageCaptured: onImageCaptured)
+    }
+    
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let onImageCaptured: (UIImage) -> Void
+        
+        init(onImageCaptured: @escaping (UIImage) -> Void) {
+            self.onImageCaptured = onImageCaptured
         }
-        .onAppear {
-            camera.checkPermissions()
-        }
-        .onChange(of: camera.recordedURL) { url in
-            if let url = url {
-                videoURL = url
-                dismiss()
+        
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+            if let image = info[.originalImage] as? UIImage {
+                onImageCaptured(image)
             }
+            picker.dismiss(animated: true)
+        }
+        
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            picker.dismiss(animated: true)
         }
     }
 }

@@ -10,14 +10,14 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var appState = LoanApplicationState()
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
-    @State private var isLoggedIn = false
+    @AppStorage("isLoggedIn") private var isLoggedIn = false
     
     var body: some View {
         Group {
             if !hasSeenOnboarding {
                 OnboardingView()
             } else if !isLoggedIn {
-                LoginView(isLoggedIn: $isLoggedIn)
+                LoginView()
             } else {
                 NavigationStack {
                     HomeView()
@@ -25,6 +25,11 @@ struct ContentView: View {
             }
         }
         .environmentObject(appState)
+        // Add this for testing - remove in production
+        .onAppear {
+            // Reset onboarding state for testing
+            UserDefaults.standard.set(false, forKey: "hasSeenOnboarding")
+        }
     }
 }
 
