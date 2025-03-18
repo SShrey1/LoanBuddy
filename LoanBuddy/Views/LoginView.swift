@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticationServices // Add this import for Apple Sign In
 
 struct LoginView: View {
     @State private var email = ""
@@ -67,6 +68,23 @@ struct LoginView: View {
                             .font(AppStyle.TextStyle.caption)
                         VStack { Divider() }
                     }
+                    .padding(.horizontal)
+                    
+                    // Apple Sign In
+                    SignInWithAppleButton { request in
+                        request.requestedScopes = [.fullName, .email]
+                    } onCompletion: { result in
+                        switch result {
+                        case .success(_):
+                            withAnimation {
+                                isLoggedIn = true
+                            }
+                        case .failure(let error):
+                            print(error.localizedDescription)
+                        }
+                    }
+                    .signInWithAppleButtonStyle(.black)
+                    .frame(height: 50)
                     .padding(.horizontal)
                     
                     // Google Sign In
