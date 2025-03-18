@@ -1,5 +1,4 @@
 import Foundation
-import UIKit
 
 struct UserData: Codable {
     var name: String = ""
@@ -34,31 +33,22 @@ enum ApplicationStatus: String, Codable {
     case needsMoreInfo = "Needs More Information"
 }
 
-enum DocumentType: String, Codable, CaseIterable {
-    case aadhaar = "Aadhaar Card"
-    case pan = "PAN Card"
-    case incomeProof = "Income Proof"
-}
-
 struct Document: Identifiable, Codable {
     let id: UUID
     let type: DocumentType
     var imageData: Data?
     var isVerified: Bool
-    var extractedDetails: ExtractedDetails?
     
-    init(type: DocumentType, imageData: Data? = nil, isVerified: Bool = false, extractedDetails: ExtractedDetails? = nil) {
+    init(type: DocumentType, imageData: Data? = nil, isVerified: Bool = false) {
         self.id = UUID()
         self.type = type
         self.imageData = imageData
         self.isVerified = isVerified
-        self.extractedDetails = extractedDetails
     }
 }
 
-struct ExtractedDetails: Codable {
-    let name: String?
-    let dob: String?
-    let income: String?
-    let employmentType: String?
+enum DocumentType: String, Codable, CaseIterable {
+    case aadhaar = "Aadhaar Card"
+    case pan = "PAN Card"
+    case incomeProof = "Income Proof"
 }

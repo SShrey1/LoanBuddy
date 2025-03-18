@@ -6,11 +6,6 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		53C6F4942D89B30E00053C2B /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 53C6F4932D89B30E00053C2B /* Alamofire */; };
-		53C6F4962D89B30E00053C2B /* AlamofireDynamic in Frameworks */ = {isa = PBXBuildFile; productRef = 53C6F4952D89B30E00053C2B /* AlamofireDynamic */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXContainerItemProxy section */
 		53C6F1BD2D8815BE00053C2B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -57,8 +52,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				53C6F4942D89B30E00053C2B /* Alamofire in Frameworks */,
-				53C6F4962D89B30E00053C2B /* AlamofireDynamic in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -119,8 +112,6 @@
 			);
 			name = LoanBuddy;
 			packageProductDependencies = (
-				53C6F4932D89B30E00053C2B /* Alamofire */,
-				53C6F4952D89B30E00053C2B /* AlamofireDynamic */,
 			);
 			productName = LoanBuddy;
 			productReference = 53C6F1AC2D8815BB00053C2B /* LoanBuddy.app */;
@@ -583,19 +574,6 @@
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		53C6F4932D89B30E00053C2B /* Alamofire */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 53C6F4922D89B30E00053C2B /* XCRemoteSwiftPackageReference "Alamofire" */;
-			productName = Alamofire;
-		};
-		53C6F4952D89B30E00053C2B /* AlamofireDynamic */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 53C6F4922D89B30E00053C2B /* XCRemoteSwiftPackageReference "Alamofire" */;
-			productName = AlamofireDynamic;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 53C6F1A42D8815BB00053C2B /* Project object */;
 }

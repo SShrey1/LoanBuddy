@@ -391,27 +391,6 @@ struct DocumentUploadSection: View {
                         .frame(height: 120)
                         .clipShape(RoundedRectangle(cornerRadius: AppStyle.cornerRadius))
                 }
-                
-                if let details = document.extractedDetails {
-                    VStack(alignment: .leading, spacing: 8) {
-                        if let name = details.name {
-                            Text("Name: \(name)")
-                                .font(AppStyle.TextStyle.caption)
-                        }
-                        if let dob = details.dob {
-                            Text("DOB: \(dob)")
-                                .font(AppStyle.TextStyle.caption)
-                        }
-                        if let income = details.income {
-                            Text("Income: \(income)")
-                                .font(AppStyle.TextStyle.caption)
-                        }
-                        if let employmentType = details.employmentType {
-                            Text("Employment Type: \(employmentType)")
-                                .font(AppStyle.TextStyle.caption)
-                        }
-                    }
-                }
             }
         }
         .padding()
@@ -419,37 +398,19 @@ struct DocumentUploadSection: View {
     }
     
     private func handleDocumentUpload(documentType: DocumentType, imageData: Data) {
-        // Step 1: Extract text from the image
-        extractTextFromImage(imageData: imageData) { extractedText in
-            guard let extractedText = extractedText else {
-                print("Failed to extract text from the image.")
-                return
-            }
-            
-            // Step 2: Parse details from the extracted text
-            let details = extractDetailsFromText(text: extractedText)
-            
-            // Step 3: Save the document and extracted details
-            let extractedDetails = ExtractedDetails(
-                name: details.name,
-                dob: details.dob,
-                income: details.income,
-                employmentType: details.employmentType
-            )
-            
-            let newDocument = Document(
-                type: documentType,
-                imageData: imageData,
-                isVerified: false,
-                extractedDetails: extractedDetails
-            )
-            
-            DispatchQueue.main.async {
-                appState.userData.documents.removeAll { $0.type == documentType }
-                appState.userData.documents.append(newDocument)
-                selectedDocumentType = nil
-                selectedItem = nil
-            }
+        // Here you would normally upload the image to your server
+        // For demo, we'll just store it locally
+        let newDocument = Document(
+            type: documentType,
+            imageData: imageData,
+            isVerified: false
+        )
+        
+        DispatchQueue.main.async {
+            appState.userData.documents.removeAll { $0.type == documentType }
+            appState.userData.documents.append(newDocument)
+            selectedDocumentType = nil
+            selectedItem = nil
         }
     }
 }
