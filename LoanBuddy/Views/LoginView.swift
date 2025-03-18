@@ -103,7 +103,7 @@ struct LoginView: View {
             }
         }
         .sheet(isPresented: $showingSignUp) {
-            SignUpView(isLoggedIn: $isLoggedIn)
+            SignUpView()
         }
         .onAppear {
             isAnimating = true
@@ -116,7 +116,7 @@ struct SignUpView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
-    @Binding var isLoggedIn: Bool
+    @AppStorage("isLoggedIn") private var isLoggedIn = false
     
     var body: some View {
         NavigationView {

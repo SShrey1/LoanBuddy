@@ -291,6 +291,7 @@ struct DocumentUploadSection: View {
     @State private var selectedDocumentType: DocumentType?
     @State private var showingCamera = false
     @State private var showingUploadOptions = false
+    @State private var selectedImageData: Data?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -313,22 +314,35 @@ struct DocumentUploadSection: View {
             
             PhotosPicker(
                 selection: $selectedItem,
-                matching: .images
+                matching: .images,
+                photoLibrary: .shared()
             ) {
-                Text("Choose from Gallery")
+                Button("Choose from Gallery") {
+                    // This is just for the button appearance
+                }
             }
+            .buttonStyle(.automatic)
         }
         .sheet(isPresented: $showingCamera) {
             CameraView { capturedImage in
                 if let documentType = selectedDocumentType {
-                    handleDocumentUpload(documentType: documentType, image: capturedImage)
+                    if let imageData = capturedImage.jpegData(compressionQuality: 0.8) {
+                        handleDocumentUpload(documentType: documentType, imageData: imageData)
+                    }
                 }
                 showingCamera = false
             }
         }
-        .onChange(of: selectedItem) { _ in
-            if let documentType = selectedDocumentType {
-                handlePhotosPicker(documentType: documentType)
+        .onChange(of: selectedItem) { newItem in
+            Task {
+                if let data = try? await newItem?.loadTransferable(type: Data.self) {
+                    await MainActor.run {
+                        selectedImageData = data
+                        if let documentType = selectedDocumentType {
+                            handleDocumentUpload(documentType: documentType, imageData: data)
+                        }
+                    }
+                }
             }
         }
     }
@@ -369,17 +383,13 @@ struct DocumentUploadSection: View {
                 }
             }
             
-            if let document = document {
-                if let imageURL = document.imageURL {
-                    AsyncImage(url: imageURL) { image in
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    } placeholder: {
-                        Color.gray.opacity(0.2)
-                    }
-                    .frame(height: 120)
-                    .clipShape(RoundedRectangle(cornerRadius: AppStyle.cornerRadius))
+            if let document = document, let imageData = document.imageData {
+                if let uiImage = UIImage(data: imageData) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 120)
+                        .clipShape(RoundedRectangle(cornerRadius: AppStyle.cornerRadius))
                 }
             }
         }
@@ -387,23 +397,12 @@ struct DocumentUploadSection: View {
         .background(AppStyle.CardStyle.shadow)
     }
     
-    private func handlePhotosPicker(documentType: DocumentType) {
-        guard let selectedItem = selectedItem else { return }
-        
-        Task {
-            if let data = try? await selectedItem.loadTransferable(type: Data.self),
-               let image = UIImage(data: data) {
-                handleDocumentUpload(documentType: documentType, image: image)
-            }
-        }
-    }
-    
-    private func handleDocumentUpload(documentType: DocumentType, image: UIImage) {
+    private func handleDocumentUpload(documentType: DocumentType, imageData: Data) {
         // Here you would normally upload the image to your server
-        // For demo, we'll just create a dummy document
+        // For demo, we'll just store it locally
         let newDocument = Document(
             type: documentType,
-            imageURL: URL(string: "https://example.com/dummy.jpg"),
+            imageData: imageData,
             isVerified: false
         )
         

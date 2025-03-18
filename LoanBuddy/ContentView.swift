@@ -27,8 +27,13 @@ struct ContentView: View {
         .environmentObject(appState)
         // Add this for testing - remove in production
         .onAppear {
-            // Reset onboarding state for testing
+            // Reset both states for testing
             UserDefaults.standard.set(false, forKey: "hasSeenOnboarding")
+            UserDefaults.standard.set(false, forKey: "isLoggedIn")
+            
+            // Update the @AppStorage variables
+            hasSeenOnboarding = false
+            isLoggedIn = false
         }
     }
 }

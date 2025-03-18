@@ -36,13 +36,13 @@ enum ApplicationStatus: String, Codable {
 struct Document: Identifiable, Codable {
     let id: UUID
     let type: DocumentType
-    var imageURL: URL?
+    var imageData: Data?
     var isVerified: Bool
     
-    init(type: DocumentType, imageURL: URL? = nil, isVerified: Bool = false) {
+    init(type: DocumentType, imageData: Data? = nil, isVerified: Bool = false) {
         self.id = UUID()
         self.type = type
-        self.imageURL = imageURL
+        self.imageData = imageData
         self.isVerified = isVerified
     }
 }

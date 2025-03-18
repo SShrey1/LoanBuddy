@@ -107,7 +107,15 @@ struct DocumentUploadView: View {
                 }
             }
             
-            if document == nil {
+            if let document = document {
+                if let imageData = document.imageData, let uiImage = UIImage(data: imageData) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 120)
+                        .clipShape(RoundedRectangle(cornerRadius: AppStyle.cornerRadius))
+                }
+            } else {
                 PhotosPicker(selection: $selectedItem, matching: .images) {
                     HStack {
                         Image(systemName: "plus.circle.fill")
@@ -178,17 +186,21 @@ struct DocumentUploadView: View {
         
         // Simulate upload delay
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            let newDocument = Document(
-                type: documentType,
-                imageURL: URL(string: "https://example.com/dummy.jpg"),
-                isVerified: true
-            )
-            
-            appState.userData.documents.removeAll { $0.type == documentType }
-            appState.userData.documents.append(newDocument)
-            
-            showingUploadAnimation = false
-            selectedItem = nil
+            Task {
+                if let data = try? await selectedItem?.loadTransferable(type: Data.self) {
+                    let newDocument = Document(
+                        type: documentType,
+                        imageData: data,
+                        isVerified: true
+                    )
+                    
+                    appState.userData.documents.removeAll { $0.type == documentType }
+                    appState.userData.documents.append(newDocument)
+                }
+                
+                showingUploadAnimation = false
+                selectedItem = nil
+            }
         }
     }
 } 

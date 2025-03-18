@@ -27,12 +27,13 @@ struct OnboardingView: View {
                         image: pages[index].image,
                         title: pages[index].title,
                         description: pages[index].description,
-                        isLastPage: index == pages.count - 1
-                    ) {
-                        withAnimation {
-                            hasSeenOnboarding = true
+                        isLastPage: index == pages.count - 1,
+                        action: {
+                            withAnimation {
+                                hasSeenOnboarding = true
+                            }
                         }
-                    }
+                    )
                     .tag(index)
                 }
             }
@@ -66,7 +67,7 @@ struct OnboardingPage: View {
     let title: String
     let description: String
     let isLastPage: Bool
-    var action: (() -> Void)? = nil
+    let action: () -> Void
     @State private var isAnimating = false
     
     var body: some View {
@@ -98,9 +99,7 @@ struct OnboardingPage: View {
             Spacer()
             
             if isLastPage {
-                Button(action: {
-                    action?()
-                }) {
+                Button(action: action) {
                     Text("Get Started")
                 }
                 .buttonStyle(PrimaryButtonStyle())
