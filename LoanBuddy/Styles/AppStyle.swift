@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct AppStyle {
-    static let primaryColor = Color.blue
+    static let primaryColor: Color = .red
     static let secondaryColor = Color(hex: "FF6B6B")
-    static let backgroundColor = Color(hex: "F8F9FA")
+    static let backgroundColor = Color(.systemBackground)
     static let cardBackground = Color.white
     
     static let shadowColor = Color.black.opacity(0.1)
@@ -24,8 +24,8 @@ struct AppStyle {
         
         static var shadow: some View {
             RoundedRectangle(cornerRadius: AppStyle.cornerRadius)
-                .fill(Color.white)
-                .shadow(color: AppStyle.shadowColor, radius: 8, x: 0, y: 4)
+                .fill(Color(.systemBackground))
+                .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 2)
         }
     }
     

@@ -13,6 +13,7 @@ struct VideoRecordingView: UIViewControllerRepresentable {
         picker.videoQuality = .typeHigh
         picker.cameraCaptureMode = .video
         picker.videoMaximumDuration = 60 // 1 minute max
+        picker.allowsEditing = false // Disable editing to keep it simple
         return picker
     }
     
@@ -31,13 +32,17 @@ struct VideoRecordingView: UIViewControllerRepresentable {
         
         func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
             if let videoURL = info[.mediaURL] as? URL {
-                // Copy video to app's document directory for persistence
                 let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                let fileName = "recorded_video_\(Date()).mov"
+                let fileName = "recorded_video_\(Date().timeIntervalSince1970).mov" // Unique filename
                 let destinationURL = documentsDirectory.appendingPathComponent(fileName)
                 
-                try? FileManager.default.copyItem(at: videoURL, to: destinationURL)
-                parent.videoURL = destinationURL
+                do {
+                    try FileManager.default.copyItem(at: videoURL, to: destinationURL)
+                    parent.videoURL = destinationURL
+                    print("Video saved to: \(destinationURL)") // Debug log
+                } catch {
+                    print("Failed to save video: \(error)")
+                }
             }
             parent.dismiss()
         }

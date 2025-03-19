@@ -3,16 +3,16 @@ import AuthenticationServices
 
 struct LoginView: View {
     @State private var email = ""
-    @State private var password = ""
+    @State private var name = "" // Changed from password to name
     @State private var showingSignUp = false
     @AppStorage("isLoggedIn") private var isLoggedIn = false
     @State private var isAnimating = false
-    @State private var navigateToUploadProfileImage = false // New state for navigation
+    @State private var navigateToUploadProfileImage = false
+    @EnvironmentObject private var appState: LoanApplicationState // Added to store email and name
     
     var body: some View {
         NavigationView {
             ZStack {
-                // Background gradient
                 LinearGradient(
                     gradient: Gradient(colors: [.white, AppStyle.backgroundColor]),
                     startPoint: .top,
@@ -22,7 +22,6 @@ struct LoginView: View {
                 
                 ScrollView {
                     VStack(spacing: 30) {
-                        // Logo and Title
                         VStack(spacing: 15) {
                             Image(systemName: "building.columns.fill")
                                 .font(.system(size: 70))
@@ -39,7 +38,6 @@ struct LoginView: View {
                         }
                         .padding(.top, 60)
                         
-                        // Login Form
                         VStack(spacing: 20) {
                             TextField("Email", text: $email)
                                 .textFieldStyle(AppTextFieldStyle())
@@ -47,14 +45,17 @@ struct LoginView: View {
                                 .autocapitalization(.none)
                                 .keyboardType(.emailAddress)
                             
-                            SecureField("Password", text: $password)
+                            TextField("Full Name", text: $name) // Replaced SecureField with TextField
                                 .textFieldStyle(AppTextFieldStyle())
-                                .textContentType(.password)
+                                .textContentType(.name)
                             
                             Button(action: {
                                 withAnimation {
+                                    // Store email and name in app state
+                                    appState.userData.email = email
+                                    appState.userData.name = name
                                     isLoggedIn = true
-                                    navigateToUploadProfileImage = true // Redirect to upload profile image
+                                    navigateToUploadProfileImage = true
                                 }
                             }) {
                                 Text("Sign In")
@@ -63,7 +64,6 @@ struct LoginView: View {
                         }
                         .padding(.horizontal)
                         
-                        // Divider
                         HStack {
                             VStack { Divider() }
                             Text("OR")
@@ -73,15 +73,20 @@ struct LoginView: View {
                         }
                         .padding(.horizontal)
                         
-                        // Apple Sign In
                         SignInWithAppleButton { request in
                             request.requestedScopes = [.fullName, .email]
                         } onCompletion: { result in
                             switch result {
-                            case .success(_):
+                            case .success(let authResults):
                                 withAnimation {
+                                    if let appleIDCredential = authResults.credential as? ASAuthorizationAppleIDCredential {
+                                        appState.userData.email = appleIDCredential.email ?? ""
+                                        if let fullName = appleIDCredential.fullName {
+                                            appState.userData.name = "\(fullName.givenName ?? "") \(fullName.familyName ?? "")".trimmingCharacters(in: .whitespaces)
+                                        }
+                                    }
                                     isLoggedIn = true
-                                    navigateToUploadProfileImage = true // Redirect to upload profile image
+                                    navigateToUploadProfileImage = true
                                 }
                             case .failure(let error):
                                 print(error.localizedDescription)
@@ -91,15 +96,17 @@ struct LoginView: View {
                         .frame(height: 50)
                         .padding(.horizontal)
                         
-                        // Google Sign In
                         Button(action: {
                             withAnimation {
+                                // Store email and name for Google sign-in
+                                appState.userData.email = email
+                                appState.userData.name = name
                                 isLoggedIn = true
-                                navigateToUploadProfileImage = true // Redirect to upload profile image
+                                navigateToUploadProfileImage = true
                             }
                         }) {
                             HStack {
-                                Image("google_logo") // Add this image to your assets
+                                Image("google_logo")
                                     .resizable()
                                     .frame(width: 24, height: 24)
                                 Text("Sign in with Google")
@@ -114,7 +121,6 @@ struct LoginView: View {
                         }
                         .padding(.horizontal)
                         
-                        // Sign Up Link
                         Button("Don't have an account? Sign Up") {
                             showingSignUp = true
                         }

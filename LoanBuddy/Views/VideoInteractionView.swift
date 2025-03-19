@@ -13,23 +13,19 @@ struct VideoInteractionView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                // AI Assistant Video Player
                 ZStack {
                     VideoPlayer(player: AVPlayer(url: appState.assistantVideos[.incomeVerification]!))
                         .frame(height: 280)
                         .clipShape(RoundedRectangle(cornerRadius: AppStyle.cornerRadius))
                         .shadow(color: AppStyle.shadowColor, radius: 10)
                     
-                    // Video overlay when not playing
                     if showingInstructions {
                         videoInstructionsOverlay
                     }
                 }
                 
-                // Instructions Card
                 instructionsCard
                 
-                // Response Section
                 responseSection
                 
                 Spacer(minLength: 40)
@@ -39,6 +35,12 @@ struct VideoInteractionView: View {
         .background(AppStyle.backgroundColor)
         .sheet(isPresented: $showingCamera) {
             VideoRecordingView(videoURL: $recordedVideoURL)
+                .onDisappear {
+                    // Ensure the video URL is set after recording
+                    if let url = recordedVideoURL {
+                        print("Video recorded at: \(url)") // Debug log
+                    }
+                }
         }
     }
     
@@ -102,7 +104,6 @@ struct VideoInteractionView: View {
     private var responseSection: some View {
         VStack(spacing: 20) {
             if let recordedVideo = recordedVideoURL {
-                // Show recorded video preview
                 VideoPlayer(player: AVPlayer(url: recordedVideo))
                     .frame(height: 200)
                     .cornerRadius(AppStyle.cornerRadius)
@@ -114,14 +115,12 @@ struct VideoInteractionView: View {
                     .buttonStyle(SecondaryButtonStyle())
                     
                     Button("Continue") {
-                        // Verify face match before continuing
                         FaceMatchingService.shared.matchFaceInVideo(url: recordedVideo) { isMatch in
                             if isMatch {
                                 withAnimation {
                                     appState.currentStep = .documentUpload
                                 }
                             } else {
-                                // Show error alert
                                 showFaceMatchError = true
                             }
                         }
@@ -129,14 +128,13 @@ struct VideoInteractionView: View {
                     .buttonStyle(PrimaryButtonStyle())
                 }
             } else {
-                // Record button
                 Button(action: {
                     requestCameraAndMicrophonePermissions { granted in
                         if granted {
-                            showingCamera = true
+                            showingCamera = true // This triggers the camera sheet
                         } else {
-                            // Show an alert if permissions are denied
                             print("Camera or microphone access denied.")
+                            showPermissionsAlert()
                         }
                     }
                 }) {
@@ -158,8 +156,6 @@ struct VideoInteractionView: View {
             Text("The person in the video doesn't match the profile picture. Please ensure you're the same person who uploaded the profile picture.")
         }
     }
-    
-    // MARK: - Permission Handling Functions
     
     private func showPermissionsAlert() {
         let alert = UIAlertController(

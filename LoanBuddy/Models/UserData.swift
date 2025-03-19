@@ -9,20 +9,19 @@ struct UserData: Codable {
     var documents: [Document] = []
     var applicationStatus: ApplicationStatus = .notStarted
     var profileImage: Data? = nil // Add this property
+    var loanAmount: Double = 0
+    var loanPeriod: Int = 0 // in months
+    var recentActivities: [RecentActivity] = []
 }
 
 enum Language: String, Codable, CaseIterable {
     case english = "English"
     case hindi = "Hindi"
-    case tamil = "Tamil"
-    case telugu = "Telugu"
     
     var welcomeMessage: String {
         switch self {
         case .english: return "Welcome to LoanBuddy"
         case .hindi: return "लोन बडी में आपका स्वागत है"
-        case .tamil: return "வாங்கியிருக்கின்றேன்"
-        case .telugu: return "వాళ్లు స్వాగతం"
         }
     }
     
@@ -30,8 +29,6 @@ enum Language: String, Codable, CaseIterable {
         switch self {
         case .english: return "en"
         case .hindi: return "hi"
-        case .tamil: return "ta"
-        case .telugu: return "te"
         }
     }
 }
@@ -87,4 +84,27 @@ struct ExtractedDetails: Codable {
         self.aadhaarNumber = aadhaarNumber
         self.panNumber = panNumber
     }
+}
+
+// Add RecentActivity model
+struct RecentActivity: Identifiable, Codable {
+    let id: UUID
+    let title: String
+    let description: String
+    let date: Date
+    let type: ActivityType
+    
+    init(title: String, description: String, type: ActivityType) {
+        self.id = UUID()
+        self.title = title
+        self.description = description
+        self.date = Date()
+        self.type = type
+    }
+}
+
+enum ActivityType: String, Codable {
+    case success
+    case failure
+    case info
 }

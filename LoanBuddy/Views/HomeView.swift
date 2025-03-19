@@ -8,6 +8,7 @@ struct HomeView: View {
     @State private var showingProfile = false
     @AppStorage("isLoggedIn") private var isLoggedIn = false
     @State private var isUploading = false
+    @State private var showLoanDetails = false
     
     var body: some View {
         ScrollView {
@@ -90,34 +91,54 @@ struct HomeView: View {
             .buttonStyle(PrimaryButtonStyle())
             
             HStack(spacing: 12) {
-                quickActionButton(
-                    icon: "doc.text.fill",
-                    title: "Documents",
-                    action: { /* Handle action */ }
-                )
+                NavigationLink(destination: DocumentsView()) {
+                    quickActionButton(
+                        icon: "doc.text.fill",
+                        title: "Documents"
+                    )
+                }
                 
-                quickActionButton(
-                    icon: "chart.bar.fill",
-                    title: "Track Status",
-                    action: { /* Handle action */ }
-                )
+                Button(action: {
+                    showLoanDetails = true
+                }) {
+                    quickActionButton(
+                        icon: "indianrupeesign.circle.fill",
+                        title: "Loan Details"
+                    )
+                }
             }
         }
         .padding(.horizontal)
+        .sheet(isPresented: $showLoanDetails) {
+            LoanDetailsView()
+        }
     }
     
-    private func quickActionButton(icon: String, title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.title2)
-                Text(title)
-                    .font(AppStyle.TextStyle.caption)
+    private func quickActionButton(icon: String, title: String, action: (() -> Void)? = nil) -> some View {
+        Group {
+            if let action = action {
+                Button(action: action) {
+                    quickActionContent(icon: icon, title: title)
+                }
+            } else {
+                quickActionContent(icon: icon, title: title)
             }
-            .frame(maxWidth: .infinity)
-            .padding()
         }
-        .buttonStyle(SecondaryButtonStyle())
+    }
+    
+    private func quickActionContent(icon: String, title: String) -> some View {
+        VStack {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(.red)
+            Text(title)
+                .font(AppStyle.TextStyle.caption)
+                .foregroundColor(.red)
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(Color.red.opacity(0.1))
+        .cornerRadius(AppStyle.cornerRadius)
     }
     
     private var applicationStatusView: some View {
@@ -133,13 +154,13 @@ struct HomeView: View {
     private var recentActivityView: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Recent Activity")
-                .font(AppStyle.TextStyle.heading)
+                .font(.headline)
                 .padding(.horizontal)
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 16) {
-                    ForEach(0..<3) { _ in
-                        activityCard
+                    ForEach(appState.userData.recentActivities) { activity in
+                        activityCard(activity)
                     }
                 }
                 .padding(.horizontal)
@@ -147,26 +168,44 @@ struct HomeView: View {
         }
     }
     
-    private var activityCard: some View {
+    private func activityCard(_ activity: RecentActivity) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: "bell.fill")
-                    .foregroundColor(AppStyle.primaryColor)
-                Text("Status Update")
-                    .font(AppStyle.TextStyle.caption)
+                Image(systemName: iconName(for: activity.type))
+                    .foregroundColor(color(for: activity.type))
+                Text(activity.title)
+                    .font(.subheadline)
                     .foregroundColor(.secondary)
             }
             
-            Text("Document verification completed")
-                .font(AppStyle.TextStyle.body)
+            Text(activity.description)
+                .font(.headline)
+                .lineLimit(2)
             
-            Text("2 hours ago")
-                .font(AppStyle.TextStyle.caption)
+            Text(activity.date, style: .date)
+                .font(.caption)
                 .foregroundColor(.secondary)
         }
         .padding()
-        .frame(width: 200)
+        .frame(width: 300)
         .background(AppStyle.CardStyle.shadow)
+        .cornerRadius(AppStyle.cornerRadius)
+    }
+    
+    private func iconName(for type: ActivityType) -> String {
+        switch type {
+        case .success: return "checkmark.circle.fill"
+        case .failure: return "xmark.circle.fill"
+        case .info: return "info.circle.fill"
+        }
+    }
+    
+    private func color(for type: ActivityType) -> Color {
+        switch type {
+        case .success: return .green
+        case .failure: return .red
+        case .info: return .red
+        }
     }
 }
 
@@ -429,20 +468,38 @@ struct DocumentUploadSection: View {
         
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: document?.isVerified == true ? "checkmark.circle.fill" : "doc.fill")
-                    .foregroundColor(document?.isVerified == true ? .green : AppStyle.primaryColor)
-                    .font(.title2)
+                if let document = document {
+                    if document.isVerified {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                            .font(.title2)
+                    } else {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.red)
+                            .font(.title2)
+                    }
+                } else {
+                    Image(systemName: "doc.fill")
+                        .foregroundColor(.red)
+                        .font(.title2)
+                }
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(documentType.rawValue)
                         .font(AppStyle.TextStyle.body)
                     
-                    if document?.isVerified == true {
-                        Text("Verified")
-                            .font(AppStyle.TextStyle.caption)
-                            .foregroundColor(.green)
+                    if let document = document {
+                        if document.isVerified {
+                            Text("Verified")
+                                .font(AppStyle.TextStyle.caption)
+                                .foregroundColor(.green)
+                        } else {
+                            Text("Verification Failed")
+                                .font(AppStyle.TextStyle.caption)
+                                .foregroundColor(.red)
+                        }
                     } else {
-                        Text(document == nil ? "Not uploaded" : "Pending verification")
+                        Text("Not uploaded")
                             .font(AppStyle.TextStyle.caption)
                             .foregroundColor(.secondary)
                     }
@@ -456,7 +513,7 @@ struct DocumentUploadSection: View {
                 }) {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.title2)
-                        .foregroundColor(AppStyle.primaryColor)
+                        .foregroundColor(.red)
                 }
             }
             
@@ -477,7 +534,6 @@ struct DocumentUploadSection: View {
     private func handleDocumentUpload(documentType: DocumentType, imageData: Data) {
         isUploading = true
         
-        // Save image to documents directory
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         let fileName = "\(documentType.rawValue)_\(UUID().uuidString).jpg"
         let fileURL = documentsDirectory.appendingPathComponent(fileName)
@@ -488,23 +544,46 @@ struct DocumentUploadSection: View {
             if let image = UIImage(data: imageData) {
                 switch documentType {
                 case .aadhaar:
-                    // Use Vision framework for Aadhaar card
                     verifyAadhaarCard(image: image) { aadhaarNumber in
-                        handleVerificationResult(documentType: documentType, imageData: imageData, 
-                                              isVerified: aadhaarNumber != nil,
-                                              extractedDetails: ExtractedDetails(aadhaarNumber: aadhaarNumber))
+                        let isVerified = aadhaarNumber != nil
+                        let details = isVerified ? ExtractedDetails(aadhaarNumber: aadhaarNumber) : nil
+                        handleVerificationResult(documentType: documentType, 
+                                              imageData: imageData,
+                                              isVerified: isVerified,
+                                              extractedDetails: details)
+                        if isVerified {
+                            saveDocumentToStorage(imageData: imageData, documentType: documentType)
+                        }
                     }
                 case .pan:
-                    // Use Vision framework for PAN card
                     verifyPANCard(image: image) { panNumber in
-                        handleVerificationResult(documentType: documentType, imageData: imageData, 
-                                              isVerified: panNumber != nil,
-                                              extractedDetails: ExtractedDetails(panNumber: panNumber))
+                        let isVerified = panNumber != nil
+                        let details = isVerified ? ExtractedDetails(panNumber: panNumber) : nil
+                        handleVerificationResult(documentType: documentType, 
+                                              imageData: imageData,
+                                              isVerified: isVerified,
+                                              extractedDetails: details)
+                        if isVerified {
+                            saveDocumentToStorage(imageData: imageData, documentType: documentType)
+                        }
+                    }
+                case .incomeProof:
+                    verifyIncomeProof(image: image) { amount in
+                        let isVerified = amount != nil
+                        let details = isVerified ? ExtractedDetails(income: amount) : nil
+                        handleVerificationResult(documentType: documentType, 
+                                              imageData: imageData,
+                                              isVerified: isVerified,
+                                              extractedDetails: details)
+                        if isVerified {
+                            saveDocumentToStorage(imageData: imageData, documentType: documentType)
+                        }
                     }
                 default:
-                    // Handle other documents
-                    handleVerificationResult(documentType: documentType, imageData: imageData, 
-                                          isVerified: false, extractedDetails: nil)
+                    handleVerificationResult(documentType: documentType, 
+                                          imageData: imageData,
+                                          isVerified: false,
+                                          extractedDetails: nil)
                 }
             }
         } catch {
@@ -615,6 +694,76 @@ struct DocumentUploadSection: View {
         let panRegex = "^[A-Z]{5}[0-9]{4}[A-Z]$"
         let panTest = NSPredicate(format: "SELF MATCHES %@", panRegex)
         return panTest.evaluate(with: pan)
+    }
+    
+    // Add this helper function for Income verification
+    private func verifyIncomeProof(image: UIImage, completion: @escaping (String?) -> Void) {
+        guard let cgImage = image.cgImage else {
+            completion(nil)
+            return
+        }
+        
+        let requestHandler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        let request = VNRecognizeTextRequest { request, error in
+            guard let observations = request.results as? [VNRecognizedTextObservation] else {
+                completion(nil)
+                return
+            }
+            
+            // Look for any number pattern that could represent an amount
+            let amountPattern = "(?:Rs\\.?|₹)?\\s*(\\d+(?:,\\d+)*(?:\\.\\d{2})?)"
+            
+            for observation in observations {
+                let recognizedText = observation.topCandidates(1).first?.string ?? ""
+                if let match = try? NSRegularExpression(pattern: amountPattern)
+                    .firstMatch(in: recognizedText, range: NSRange(recognizedText.startIndex..., in: recognizedText)),
+                   match.numberOfRanges >= 2,
+                   let amountRange = Range(match.range(at: 1), in: recognizedText) {
+                    let amount = String(recognizedText[amountRange])
+                        .replacingOccurrences(of: ",", with: "")
+                    completion(amount)
+                    return
+                }
+            }
+            completion(nil)
+        }
+        
+        request.recognitionLevel = .accurate
+        
+        do {
+            try requestHandler.perform([request])
+        } catch {
+            print("Error performing OCR: \(error)")
+            completion(nil)
+        }
+    }
+    
+    // Add helper function to save documents
+    private func saveDocumentToStorage(imageData: Data, documentType: DocumentType) {
+        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let documentsFolder = documentsDirectory.appendingPathComponent("VerifiedDocuments")
+        
+        do {
+            // Create documents folder if it doesn't exist
+            if !FileManager.default.fileExists(atPath: documentsFolder.path) {
+                try FileManager.default.createDirectory(at: documentsFolder, withIntermediateDirectories: true)
+            }
+            
+            // Save the document with a unique name
+            let fileName = "\(documentType.rawValue)_\(Date().timeIntervalSince1970).jpg"
+            let fileURL = documentsFolder.appendingPathComponent(fileName)
+            try imageData.write(to: fileURL)
+            
+            print("Document saved successfully at: \(fileURL.path)")
+        } catch {
+            print("Error saving document to storage: \(error)")
+        }
+    }
+    
+    // Add helper function to check if all documents are verified
+    private func areAllDocumentsVerified() -> Bool {
+        let verifiedDocuments = appState.userData.documents.filter { $0.isVerified }
+        return verifiedDocuments.count == DocumentType.allCases.count
     }
 }
 

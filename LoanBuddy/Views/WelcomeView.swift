@@ -11,7 +11,7 @@ struct WelcomeView: View {
                 .frame(height: 300)
                 .cornerRadius(12)
             
-            Text("Meet Priya, Your AI Loan Manager")
+            Text("Meet Vansh, Your AI Loan Manager")
                 .font(.title)
                 .multilineTextAlignment(.center)
             
