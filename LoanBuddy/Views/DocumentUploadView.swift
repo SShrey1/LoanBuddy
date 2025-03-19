@@ -92,7 +92,7 @@ struct DocumentUploadView: View {
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: document?.isVerified == true ? "checkmark.circle.fill" : "doc.fill")
-                    .foregroundColor(document?.isVerified == true ? .green : AppStyle.primaryColor)
+                    .foregroundColor(document?.isVerified == true ? .green : .blue)
                     .font(.title2)
                 
                 Text(documentType.rawValue)
@@ -104,6 +104,10 @@ struct DocumentUploadView: View {
                     Text("Verified")
                         .font(AppStyle.TextStyle.caption)
                         .foregroundColor(.green)
+                } else if document != nil {
+                    Text("Verification Pending")
+                        .font(AppStyle.TextStyle.caption)
+                        .foregroundColor(.blue)
                 }
             }
             

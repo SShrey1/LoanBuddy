@@ -130,14 +130,14 @@ struct HomeView: View {
         VStack {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundColor(.red)
+                .foregroundColor(.blue)
             Text(title)
                 .font(AppStyle.TextStyle.caption)
-                .foregroundColor(.red)
+                .foregroundColor(.blue)
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(Color.red.opacity(0.1))
+        .background(Color.blue.opacity(0.1))
         .cornerRadius(AppStyle.cornerRadius)
     }
     
@@ -250,7 +250,7 @@ struct ProfileView: View {
                         dismiss()
                     }) {
                         Text("Sign Out")
-                            .foregroundColor(.red)
+                            .foregroundColor(.blue)
                     }
                 }
             }
@@ -377,7 +377,7 @@ struct ApplicationStatusCard: View {
     private var statusColor: Color {
         switch status {
         case .approved: return .green
-        case .rejected: return .red
+        case .rejected: return .blue
         case .needsMoreInfo: return .orange
         case .inProgress: return .blue
         case .notStarted: return .gray
@@ -475,12 +475,12 @@ struct DocumentUploadSection: View {
                             .font(.title2)
                     } else {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.red)
+                            .foregroundColor(.blue)
                             .font(.title2)
                     }
                 } else {
                     Image(systemName: "doc.fill")
-                        .foregroundColor(.red)
+                        .foregroundColor(.blue)
                         .font(.title2)
                 }
                 
@@ -496,7 +496,7 @@ struct DocumentUploadSection: View {
                         } else {
                             Text("Verification Failed")
                                 .font(AppStyle.TextStyle.caption)
-                                .foregroundColor(.red)
+                                .foregroundColor(.blue)
                         }
                     } else {
                         Text("Not uploaded")
@@ -513,7 +513,7 @@ struct DocumentUploadSection: View {
                 }) {
                     Image(systemName: "arrow.up.circle.fill")
                         .font(.title2)
-                        .foregroundColor(.red)
+                        .foregroundColor(.blue)
                 }
             }
             

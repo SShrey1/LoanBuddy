@@ -7,6 +7,17 @@ struct LoanDetailsView: View {
     @State private var loanPeriod: String = ""
     @State private var showError = false
     
+    // Add computed properties for validation
+    private var isValidAmount: Bool {
+        guard let amount = Double(loanAmount) else { return false }
+        return amount > 0 && amount <= 1000000 // Max 10 lakhs
+    }
+    
+    private var isValidPeriod: Bool {
+        guard let period = Int(loanPeriod) else { return false }
+        return period > 0 && period <= 60 // Max 5 years
+    }
+    
     var body: some View {
         NavigationView {
             ScrollView {
@@ -25,6 +36,8 @@ struct LoanDetailsView: View {
                         .padding()
                         .background(Color.gray.opacity(0.1))
                         .cornerRadius(AppStyle.cornerRadius)
+                        
+                        amountValidation // Add validation message
                     }
                     
                     // Loan Period Section
@@ -37,6 +50,8 @@ struct LoanDetailsView: View {
                             .padding()
                             .background(Color.gray.opacity(0.1))
                             .cornerRadius(AppStyle.cornerRadius)
+                        
+                        periodValidation // Add validation message
                     }
                     
                     // Submit Button
@@ -59,7 +74,8 @@ struct LoanDetailsView: View {
             .alert("Invalid Input", isPresented: $showError) {
                 Button("OK", role: .cancel) { }
             } message: {
-                Text("Please enter valid loan amount and period")
+                Text("Please check your loan amount and period")
+                    .foregroundColor(.blue)
             }
         }
     }
@@ -93,5 +109,29 @@ struct LoanDetailsView: View {
         }
         
         dismiss()
+    }
+    
+    private var amountValidation: some View {
+        Group {
+            if !loanAmount.isEmpty && !isValidAmount {
+                Text("Please enter a valid amount (up to ₹10,00,000)")
+                    .font(AppStyle.TextStyle.caption)
+                    .foregroundColor(.blue)
+            } else {
+                EmptyView()
+            }
+        }
+    }
+    
+    private var periodValidation: some View {
+        Group {
+            if !loanPeriod.isEmpty && !isValidPeriod {
+                Text("Please enter a valid period (1-60 months)")
+                    .font(AppStyle.TextStyle.caption)
+                    .foregroundColor(.blue)
+            } else {
+                EmptyView()
+            }
+        }
     }
 } 

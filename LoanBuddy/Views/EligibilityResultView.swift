@@ -9,9 +9,9 @@ struct EligibilityResultView: View {
         ScrollView {
             VStack(spacing: 30) {
                 // Status Icon
-                Image(systemName: statusIcon)
+                Image(systemName: appState.isEligible ? "checkmark.circle.fill" : "xmark.circle.fill")
                     .font(.system(size: 80))
-                    .foregroundColor(statusColor)
+                    .foregroundColor(appState.isEligible ? .green : .blue)
                     .scaleEffect(isAnimating ? 1 : 0.6)
                     .opacity(isAnimating ? 1 : 0)
                     .animation(.spring(response: 0.6, dampingFraction: 0.6), value: isAnimating)
@@ -128,24 +128,6 @@ struct EligibilityResultView: View {
                 }
                 .buttonStyle(PrimaryButtonStyle())
             }
-        }
-    }
-    
-    private var statusIcon: String {
-        switch appState.userData.applicationStatus {
-        case .approved: return "checkmark.circle.fill"
-        case .rejected: return "xmark.circle.fill"
-        case .needsMoreInfo: return "exclamationmark.circle.fill"
-        default: return "circle.fill"
-        }
-    }
-    
-    private var statusColor: Color {
-        switch appState.userData.applicationStatus {
-        case .approved: return .green
-        case .rejected: return AppStyle.secondaryColor
-        case .needsMoreInfo: return .orange
-        default: return .gray
         }
     }
     

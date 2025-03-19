@@ -1,12 +1,12 @@
 import SwiftUI
 
 struct AppStyle {
-    static let primaryColor: Color = .red
-    static let secondaryColor = Color(hex: "FF6B6B")
-    static let backgroundColor = Color(.systemBackground)
+    static let primaryColor: Color = .blue
+    static let secondaryColor = Color(hex: "007AFF")
+    static let backgroundColor: Color = Color(.systemBackground)
     static let cardBackground = Color.white
     
-    static let shadowColor = Color.black.opacity(0.1)
+    static let shadowColor: Color = Color.black.opacity(0.1)
     static let shadowRadius: CGFloat = 10
     static let cornerRadius: CGFloat = 12
     
@@ -24,16 +24,16 @@ struct AppStyle {
         
         static var shadow: some View {
             RoundedRectangle(cornerRadius: AppStyle.cornerRadius)
-                .fill(Color(.systemBackground))
-                .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 2)
+                .fill(Color.white)
+                .shadow(color: AppStyle.shadowColor, radius: 5)
         }
     }
     
     struct TextStyle {
-        static let title = Font.system(size: 28, weight: .bold, design: .rounded)
-        static let heading = Font.system(size: 20, weight: .semibold, design: .rounded)
-        static let body = Font.system(size: 16, weight: .regular, design: .rounded)
-        static let caption = Font.system(size: 14, weight: .medium, design: .rounded)
+        static let title: Font = .title
+        static let heading: Font = .title2
+        static let body: Font = .body
+        static let caption: Font = .caption
     }
 }
 

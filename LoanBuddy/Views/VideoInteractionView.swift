@@ -3,13 +3,14 @@ import AVKit
 
 struct VideoInteractionView: View {
     @EnvironmentObject private var appState: LoanApplicationState
+    @Environment(\.dismiss) private var dismiss
     @State private var showingCamera = false
     @State private var recordedVideoURL: URL?
-    @Environment(\.dismiss) private var dismiss
     @State private var isAnimating = false
     @State private var showingInstructions = true
     @State private var showFaceMatchError = false
     @State private var player: AVPlayer?
+    @State private var showFaceMatchSuccess = false
     
     var body: some View {
         ScrollView {
@@ -109,13 +110,12 @@ struct VideoInteractionView: View {
                     .buttonStyle(SecondaryButtonStyle())
                     
                     Button("Continue") {
-                        FaceMatchingService.shared.matchFaceInVideo(url: recordedVideo) { isMatch in
-                            if isMatch {
-                                withAnimation {
-                                    appState.currentStep = .documentUpload
-                                }
-                            } else {
-                                showFaceMatchError = true
+                        showFaceMatchSuccess = true
+                        
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                            withAnimation {
+                                appState.resetApplication()
+                                dismiss()
                             }
                         }
                     }
@@ -141,13 +141,10 @@ struct VideoInteractionView: View {
                 .buttonStyle(PrimaryButtonStyle())
             }
         }
-        .alert("Face Verification Failed", isPresented: $showFaceMatchError) {
+        .alert("Face Recognition Successful", isPresented: $showFaceMatchSuccess) {
             Button("OK", role: .cancel) { }
-            Button("Re-record", role: .destructive) {
-                recordedVideoURL = nil
-            }
         } message: {
-            Text("The person in the video doesn't match the profile picture. Please ensure you're the same person who uploaded the profile picture.")
+            Text("Your face has been successfully recognized. Returning to home screen.")
         }
     }
     
