@@ -71,4 +71,20 @@ struct ExtractedDetails: Codable {
     let dob: String?
     let income: String?
     let employmentType: String?
+    let aadhaarNumber: String?
+    let panNumber: String?
+    
+    init(name: String? = nil, 
+         dob: String? = nil, 
+         income: String? = nil, 
+         employmentType: String? = nil, 
+         aadhaarNumber: String? = nil,
+         panNumber: String? = nil) {
+        self.name = name
+        self.dob = dob
+        self.income = income
+        self.employmentType = employmentType
+        self.aadhaarNumber = aadhaarNumber
+        self.panNumber = panNumber
+    }
 }

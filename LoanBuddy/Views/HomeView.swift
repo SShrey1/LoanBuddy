@@ -477,20 +477,144 @@ struct DocumentUploadSection: View {
     private func handleDocumentUpload(documentType: DocumentType, imageData: Data) {
         isUploading = true
         
-        // Simulate network delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+        // Save image to documents directory
+        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let fileName = "\(documentType.rawValue)_\(UUID().uuidString).jpg"
+        let fileURL = documentsDirectory.appendingPathComponent(fileName)
+        
+        do {
+            try imageData.write(to: fileURL)
+            
+            if let image = UIImage(data: imageData) {
+                switch documentType {
+                case .aadhaar:
+                    // Use Vision framework for Aadhaar card
+                    verifyAadhaarCard(image: image) { aadhaarNumber in
+                        handleVerificationResult(documentType: documentType, imageData: imageData, 
+                                              isVerified: aadhaarNumber != nil,
+                                              extractedDetails: ExtractedDetails(aadhaarNumber: aadhaarNumber))
+                    }
+                case .pan:
+                    // Use Vision framework for PAN card
+                    verifyPANCard(image: image) { panNumber in
+                        handleVerificationResult(documentType: documentType, imageData: imageData, 
+                                              isVerified: panNumber != nil,
+                                              extractedDetails: ExtractedDetails(panNumber: panNumber))
+                    }
+                default:
+                    // Handle other documents
+                    handleVerificationResult(documentType: documentType, imageData: imageData, 
+                                          isVerified: false, extractedDetails: nil)
+                }
+            }
+        } catch {
+            print("Error saving document: \(error)")
+            isUploading = false
+        }
+    }
+    
+    // Add helper function to handle verification result
+    private func handleVerificationResult(documentType: DocumentType, imageData: Data, 
+                                        isVerified: Bool, extractedDetails: ExtractedDetails?) {
+        DispatchQueue.main.async {
             let newDocument = Document(
                 type: documentType,
                 imageData: imageData,
-                isVerified: false
+                isVerified: isVerified,
+                extractedDetails: extractedDetails
             )
-            
             appState.userData.documents.removeAll { $0.type == documentType }
             appState.userData.documents.append(newDocument)
             selectedDocumentType = nil
             selectedItem = nil
             isUploading = false
         }
+    }
+    
+    // Add this helper function for Aadhaar verification
+    private func verifyAadhaarCard(image: UIImage, completion: @escaping (String?) -> Void) {
+        guard let cgImage = image.cgImage else {
+            completion(nil)
+            return
+        }
+        
+        let requestHandler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        let request = VNRecognizeTextRequest { request, error in
+            guard let observations = request.results as? [VNRecognizedTextObservation] else {
+                completion(nil)
+                return
+            }
+            
+            // Look for 12-digit Aadhaar number pattern
+            let aadhaarPattern = "\\b\\d{4}\\s*\\d{4}\\s*\\d{4}\\b"
+            
+            for observation in observations {
+                let recognizedText = observation.topCandidates(1).first?.string ?? ""
+                if let range = recognizedText.range(of: aadhaarPattern, options: .regularExpression) {
+                    let aadhaarNumber = String(recognizedText[range]).replacingOccurrences(of: " ", with: "")
+                    completion(aadhaarNumber)
+                    return
+                }
+            }
+            completion(nil)
+        }
+        
+        request.recognitionLevel = .accurate
+        
+        do {
+            try requestHandler.perform([request])
+        } catch {
+            print("Error performing OCR: \(error)")
+            completion(nil)
+        }
+    }
+    
+    // Add this helper function for PAN verification
+    private func verifyPANCard(image: UIImage, completion: @escaping (String?) -> Void) {
+        guard let cgImage = image.cgImage else {
+            completion(nil)
+            return
+        }
+        
+        let requestHandler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        let request = VNRecognizeTextRequest { request, error in
+            guard let observations = request.results as? [VNRecognizedTextObservation] else {
+                completion(nil)
+                return
+            }
+            
+            // Look for PAN card pattern: 5 letters + 4 numbers + 1 letter
+            let panPattern = "\\b[A-Z]{5}[0-9]{4}[A-Z]{1}\\b"
+            
+            for observation in observations {
+                let recognizedText = observation.topCandidates(1).first?.string ?? ""
+                if let range = recognizedText.range(of: panPattern, options: .regularExpression) {
+                    let panNumber = String(recognizedText[range])
+                    // Verify PAN format
+                    if isPANValid(panNumber) {
+                        completion(panNumber)
+                        return
+                    }
+                }
+            }
+            completion(nil)
+        }
+        
+        request.recognitionLevel = .accurate
+        
+        do {
+            try requestHandler.perform([request])
+        } catch {
+            print("Error performing OCR: \(error)")
+            completion(nil)
+        }
+    }
+    
+    // Add helper function to validate PAN format
+    private func isPANValid(_ pan: String) -> Bool {
+        let panRegex = "^[A-Z]{5}[0-9]{4}[A-Z]$"
+        let panTest = NSPredicate(format: "SELF MATCHES %@", panRegex)
+        return panTest.evaluate(with: pan)
     }
 }
 
