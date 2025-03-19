@@ -1,11 +1,13 @@
 import SwiftUI
-import _PhotosUI_SwiftUI
+import PhotosUI
+import Vision
 
 struct HomeView: View {
     @EnvironmentObject private var appState: LoanApplicationState
     @State private var showStartLoanFlow = false
     @State private var showingProfile = false
     @AppStorage("isLoggedIn") private var isLoggedIn = false
+    @State private var isUploading = false
     
     var body: some View {
         ScrollView {
@@ -56,9 +58,19 @@ struct HomeView: View {
             Button(action: {
                 showingProfile = true
             }) {
-                Image(systemName: "person.circle.fill")
-                    .font(.system(size: 32))
-                    .foregroundColor(AppStyle.primaryColor)
+                if let profileImageData = appState.userData.profileImage,
+                   let uiImage = UIImage(data: profileImageData) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 40, height: 40)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(AppStyle.primaryColor, lineWidth: 2))
+                } else {
+                    Image(systemName: "person.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundColor(AppStyle.primaryColor)
+                }
             }
         }
         .padding(.horizontal)
@@ -158,16 +170,33 @@ struct HomeView: View {
     }
 }
 
-// Update ProfileView to use AppStorage instead of Binding
 struct ProfileView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("isLoggedIn") private var isLoggedIn = false
+    @EnvironmentObject private var appState: LoanApplicationState
+    @State private var selectedItem: PhotosPickerItem?
+    @State private var showingLanguageSelection = false
     
     var body: some View {
         NavigationView {
             List {
                 Section {
                     profileHeader
+                }
+                
+                Section("Preferences") {
+                    Button(action: {
+                        showingLanguageSelection = true
+                    }) {
+                        HStack {
+                            Image(systemName: "globe")
+                                .foregroundColor(AppStyle.primaryColor)
+                            Text("Language")
+                            Spacer()
+                            Text(appState.userData.selectedLanguage.rawValue)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
                 
                 Section("Account") {
@@ -195,24 +224,56 @@ struct ProfileView: View {
                     }
                 }
             }
+            .sheet(isPresented: $showingLanguageSelection) {
+                LanguageSelectionView()
+            }
         }
     }
     
     private var profileHeader: some View {
         HStack {
-            Image(systemName: "person.circle.fill")
-                .font(.system(size: 60))
-                .foregroundColor(AppStyle.primaryColor)
+            // Profile Image with PhotosPicker
+            PhotosPicker(selection: $selectedItem, matching: .images) {
+                if let profileImageData = appState.userData.profileImage,
+                   let uiImage = UIImage(data: profileImageData) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 60, height: 60)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(AppStyle.primaryColor, lineWidth: 2))
+                } else {
+                    Image(systemName: "person.circle.fill")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 60, height: 60)
+                        .foregroundColor(.gray)
+                }
+            }
             
             VStack(alignment: .leading) {
-                Text("John Doe")
+                Text(appState.userData.name.isEmpty ? "User" : appState.userData.name)
                     .font(AppStyle.TextStyle.heading)
-                Text("john.doe@example.com")
+                Text(appState.userData.email.isEmpty ? "email@example.com" : appState.userData.email)
                     .font(AppStyle.TextStyle.caption)
                     .foregroundColor(.secondary)
             }
         }
         .padding(.vertical, 8)
+        .onChange(of: selectedItem) { newItem in
+            Task {
+                do {
+                    if let data = try await newItem?.loadTransferable(type: Data.self) {
+                        await MainActor.run {
+                            appState.userData.profileImage = data
+                        }
+                    }
+                } catch {
+                    print("Error loading image: \(error)")
+                    // Show error alert to user
+                }
+            }
+        }
     }
     
     private func profileRow(icon: String, title: String) -> some View {
@@ -291,7 +352,7 @@ struct DocumentUploadSection: View {
     @State private var selectedDocumentType: DocumentType?
     @State private var showingCamera = false
     @State private var showingUploadOptions = false
-    @State private var selectedImageData: Data?
+    @State private var isUploading = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -317,11 +378,23 @@ struct DocumentUploadSection: View {
                 matching: .images,
                 photoLibrary: .shared()
             ) {
-                Button("Choose from Gallery") {
-                    // This is just for the button appearance
-                }
+                Text("Choose from Gallery")
             }
-            .buttonStyle(.automatic)
+        }
+        .overlay {
+            if isUploading {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .overlay {
+                        VStack {
+                            ProgressView()
+                                .tint(.white)
+                            Text("Uploading...")
+                                .foregroundColor(.white)
+                                .padding(.top)
+                        }
+                    }
+            }
         }
         .sheet(isPresented: $showingCamera) {
             CameraView { capturedImage in
@@ -335,13 +408,17 @@ struct DocumentUploadSection: View {
         }
         .onChange(of: selectedItem) { newItem in
             Task {
-                if let data = try? await newItem?.loadTransferable(type: Data.self) {
-                    await MainActor.run {
-                        selectedImageData = data
-                        if let documentType = selectedDocumentType {
-                            handleDocumentUpload(documentType: documentType, imageData: data)
+                do {
+                    if let data = try await newItem?.loadTransferable(type: Data.self) {
+                        await MainActor.run {
+                            if let documentType = selectedDocumentType {
+                                handleDocumentUpload(documentType: documentType, imageData: data)
+                            }
                         }
                     }
+                } catch {
+                    print("Error loading image: \(error)")
+                    // Show error alert to user
                 }
             }
         }
@@ -398,19 +475,36 @@ struct DocumentUploadSection: View {
     }
     
     private func handleDocumentUpload(documentType: DocumentType, imageData: Data) {
-        // Here you would normally upload the image to your server
-        // For demo, we'll just store it locally
-        let newDocument = Document(
-            type: documentType,
-            imageData: imageData,
-            isVerified: false
-        )
+        isUploading = true
         
-        DispatchQueue.main.async {
+        // Simulate network delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            let newDocument = Document(
+                type: documentType,
+                imageData: imageData,
+                isVerified: false
+            )
+            
             appState.userData.documents.removeAll { $0.type == documentType }
             appState.userData.documents.append(newDocument)
             selectedDocumentType = nil
             selectedItem = nil
+            isUploading = false
+        }
+    }
+}
+
+extension String {
+    func matches(for regex: String) -> [String] {
+        do {
+            let regex = try NSRegularExpression(pattern: regex)
+            let results = regex.matches(in: self, range: NSRange(self.startIndex..., in: self))
+            return results.map {
+                String(self[Range($0.range, in: self)!])
+            }
+        } catch {
+            print("Invalid regex: \(error)")
+            return []
         }
     }
 }

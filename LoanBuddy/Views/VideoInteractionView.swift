@@ -8,6 +8,7 @@ struct VideoInteractionView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isAnimating = false
     @State private var showingInstructions = true
+    @State private var showFaceMatchError = false
     
     var body: some View {
         ScrollView {
@@ -113,8 +114,16 @@ struct VideoInteractionView: View {
                     .buttonStyle(SecondaryButtonStyle())
                     
                     Button("Continue") {
-                        withAnimation {
-                            appState.currentStep = .documentUpload
+                        // Verify face match before continuing
+                        FaceMatchingService.shared.matchFaceInVideo(url: recordedVideo) { isMatch in
+                            if isMatch {
+                                withAnimation {
+                                    appState.currentStep = .documentUpload
+                                }
+                            } else {
+                                // Show error alert
+                                showFaceMatchError = true
+                            }
                         }
                     }
                     .buttonStyle(PrimaryButtonStyle())
@@ -122,7 +131,14 @@ struct VideoInteractionView: View {
             } else {
                 // Record button
                 Button(action: {
-                    showingCamera = true
+                    requestCameraAndMicrophonePermissions { granted in
+                        if granted {
+                            showingCamera = true
+                        } else {
+                            // Show an alert if permissions are denied
+                            print("Camera or microphone access denied.")
+                        }
+                    }
                 }) {
                     HStack(spacing: 12) {
                         Image(systemName: "video.circle.fill")
@@ -133,10 +149,60 @@ struct VideoInteractionView: View {
                 .buttonStyle(PrimaryButtonStyle())
             }
         }
+        .alert("Face Verification Failed", isPresented: $showFaceMatchError) {
+            Button("OK", role: .cancel) { }
+            Button("Re-record", role: .destructive) {
+                recordedVideoURL = nil
+            }
+        } message: {
+            Text("The person in the video doesn't match the profile picture. Please ensure you're the same person who uploaded the profile picture.")
+        }
+    }
+    
+    // MARK: - Permission Handling Functions
+    
+    private func showPermissionsAlert() {
+        let alert = UIAlertController(
+            title: "Permissions Required",
+            message: "Please enable camera and microphone access in Settings to record video responses.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Open Settings", style: .default) { _ in
+            if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(settingsURL)
+            }
+        })
+        
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootViewController = windowScene.windows.first?.rootViewController {
+            rootViewController.present(alert, animated: true)
+        }
+    }
+    
+    private func requestCameraAndMicrophonePermissions(completion: @escaping (Bool) -> Void) {
+        let cameraStatus = AVCaptureDevice.authorizationStatus(for: .video)
+        let microphoneStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+        
+        switch (cameraStatus, microphoneStatus) {
+        case (.authorized, .authorized):
+            completion(true)
+        case (.notDetermined, .notDetermined):
+            AVCaptureDevice.requestAccess(for: .video) { videoGranted in
+                AVCaptureDevice.requestAccess(for: .audio) { audioGranted in
+                    DispatchQueue.main.async {
+                        completion(videoGranted && audioGranted)
+                    }
+                }
+            }
+        default:
+            completion(false)
+            showPermissionsAlert()
+        }
     }
 }
 
 #Preview {
     VideoInteractionView()
         .environmentObject(LoanApplicationState())
-} 
+}

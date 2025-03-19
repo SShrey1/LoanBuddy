@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		53C6F5E32D89ECDD00053C2B /* Vision.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 53C6F5E22D89ECDD00053C2B /* Vision.framework */; };
+		53C6F5E52D89ED0D00053C2B /* VisionKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 53C6F5E42D89ED0C00053C2B /* VisionKit.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		53C6F1BD2D8815BE00053C2B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,11 +32,26 @@
 		53C6F1AC2D8815BB00053C2B /* LoanBuddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LoanBuddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		53C6F1BC2D8815BE00053C2B /* LoanBuddyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LoanBuddyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		53C6F1C62D8815BE00053C2B /* LoanBuddyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LoanBuddyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		53C6F5E22D89ECDD00053C2B /* Vision.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Vision.framework; path = System/Library/Frameworks/Vision.framework; sourceTree = SDKROOT; };
+		53C6F5E42D89ED0C00053C2B /* VisionKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VisionKit.framework; path = System/Library/Frameworks/VisionKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		53C6F5E72D89F7B300053C2B /* Exceptions for "LoanBuddy" folder in "LoanBuddy" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 53C6F1AB2D8815BB00053C2B /* LoanBuddy */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		53C6F1AE2D8815BB00053C2B /* LoanBuddy */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				53C6F5E72D89F7B300053C2B /* Exceptions for "LoanBuddy" folder in "LoanBuddy" target */,
+			);
 			path = LoanBuddy;
 			sourceTree = "<group>";
 		};
@@ -52,6 +72,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				53C6F5E32D89ECDD00053C2B /* Vision.framework in Frameworks */,
+				53C6F5E52D89ED0D00053C2B /* VisionKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +100,7 @@
 				53C6F1AE2D8815BB00053C2B /* LoanBuddy */,
 				53C6F1BF2D8815BE00053C2B /* LoanBuddyTests */,
 				53C6F1C92D8815BE00053C2B /* LoanBuddyUITests */,
+				53C6F5E12D89ECDC00053C2B /* Frameworks */,
 				53C6F1AD2D8815BB00053C2B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +113,15 @@
 				53C6F1C62D8815BE00053C2B /* LoanBuddyUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		53C6F5E12D89ECDC00053C2B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				53C6F5E42D89ED0C00053C2B /* VisionKit.framework */,
+				53C6F5E22D89ECDD00053C2B /* Vision.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -402,6 +434,7 @@
 				DEVELOPMENT_TEAM = 8TP4A8XK22;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = LoanBuddy/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -432,6 +465,7 @@
 				DEVELOPMENT_TEAM = 8TP4A8XK22;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = LoanBuddy/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

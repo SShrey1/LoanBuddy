@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 struct UserData: Codable {
     var name: String = ""
@@ -7,6 +8,7 @@ struct UserData: Codable {
     var income: Double = 0
     var documents: [Document] = []
     var applicationStatus: ApplicationStatus = .notStarted
+    var profileImage: Data? = nil // Add this property
 }
 
 enum Language: String, Codable, CaseIterable {
@@ -23,6 +25,15 @@ enum Language: String, Codable, CaseIterable {
         case .telugu: return "వాళ్లు స్వాగతం"
         }
     }
+    
+    var appLanguage: String {
+        switch self {
+        case .english: return "en"
+        case .hindi: return "hi"
+        case .tamil: return "ta"
+        case .telugu: return "te"
+        }
+    }
 }
 
 enum ApplicationStatus: String, Codable {
@@ -33,22 +44,31 @@ enum ApplicationStatus: String, Codable {
     case needsMoreInfo = "Needs More Information"
 }
 
+enum DocumentType: String, Codable, CaseIterable {
+    case aadhaar = "Aadhaar Card"
+    case pan = "PAN Card"
+    case incomeProof = "Income Proof"
+}
+
 struct Document: Identifiable, Codable {
     let id: UUID
     let type: DocumentType
     var imageData: Data?
     var isVerified: Bool
+    var extractedDetails: ExtractedDetails?
     
-    init(type: DocumentType, imageData: Data? = nil, isVerified: Bool = false) {
+    init(type: DocumentType, imageData: Data? = nil, isVerified: Bool = false, extractedDetails: ExtractedDetails? = nil) {
         self.id = UUID()
         self.type = type
         self.imageData = imageData
         self.isVerified = isVerified
+        self.extractedDetails = extractedDetails
     }
 }
 
-enum DocumentType: String, Codable, CaseIterable {
-    case aadhaar = "Aadhaar Card"
-    case pan = "PAN Card"
-    case incomeProof = "Income Proof"
+struct ExtractedDetails: Codable {
+    let name: String?
+    let dob: String?
+    let income: String?
+    let employmentType: String?
 }
