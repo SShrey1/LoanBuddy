@@ -14,13 +14,23 @@ class LoanApplicationState: ObservableObject {
         self.isProcessing = false
     }
     
-    // Placeholder for video URLs of the AI assistant
-    let assistantVideos: [ApplicationStep: URL] = [
-        .welcome: URL(string: "https://example.com/welcome.mp4")!,
-        .incomeVerification: URL(string: "https://example.com/income.mp4")!,
-        .documentUpload: URL(string: "https://example.com/documents.mp4")!,
-        .result: URL(string: "https://example.com/result.mp4")!
-    ]
+    // Update the video URLs to be language-specific
+    func getVideoURLForStep(_ step: ApplicationStep) -> URL? {
+        switch step {
+        case .welcome:
+            return Bundle.main.url(forResource: "welcomeenglish", withExtension: "mp4")
+        case .incomeVerification:
+            // Use language-specific instruction videos
+            let languageSuffix = userData.selectedLanguage == .english ? "englishins" : "hindins"
+            return Bundle.main.url(forResource: languageSuffix, withExtension: "mp4")
+        case .documentUpload:
+            return Bundle.main.url(forResource: "documents", withExtension: "mp4")
+        case .result:
+            return Bundle.main.url(forResource: "result", withExtension: "mp4")
+        case .languageSelection:
+            return nil // No video needed for language selection
+        }
+    }
     
     // Add more functionality
     func startNewApplication() {

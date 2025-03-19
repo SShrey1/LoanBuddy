@@ -9,18 +9,40 @@ struct VideoInteractionView: View {
     @State private var isAnimating = false
     @State private var showingInstructions = true
     @State private var showFaceMatchError = false
+    @State private var player: AVPlayer?
     
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
                 ZStack {
-                    VideoPlayer(player: AVPlayer(url: appState.assistantVideos[.incomeVerification]!))
-                        .frame(height: 280)
-                        .clipShape(RoundedRectangle(cornerRadius: AppStyle.cornerRadius))
-                        .shadow(color: AppStyle.shadowColor, radius: 10)
-                    
-                    if showingInstructions {
-                        videoInstructionsOverlay
+                    if let videoURL = appState.getVideoURLForStep(.incomeVerification) {
+                        VideoPlayer(player: player ?? AVPlayer(url: videoURL))
+                            .frame(height: 280)
+                            .clipShape(RoundedRectangle(cornerRadius: AppStyle.cornerRadius))
+                            .shadow(color: AppStyle.shadowColor, radius: 10)
+                            .onAppear {
+                                player = AVPlayer(url: videoURL)
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                    player?.play()
+                                }
+                                withAnimation {
+                                    showingInstructions = false
+                                }
+                            }
+                            .onDisappear {
+                                player?.pause()
+                                player?.seek(to: .zero)
+                                player = nil
+                            }
+                    } else {
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(height: 280)
+                            .clipShape(RoundedRectangle(cornerRadius: AppStyle.cornerRadius))
+                            .overlay(
+                                Text("Video not available")
+                                    .foregroundColor(.secondary)
+                            )
                     }
                 }
                 
@@ -36,38 +58,10 @@ struct VideoInteractionView: View {
         .sheet(isPresented: $showingCamera) {
             VideoRecordingView(videoURL: $recordedVideoURL)
                 .onDisappear {
-                    // Ensure the video URL is set after recording
                     if let url = recordedVideoURL {
-                        print("Video recorded at: \(url)") // Debug log
+                        print("Video recorded at: \(url)")
                     }
                 }
-        }
-    }
-    
-    private var videoInstructionsOverlay: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "play.circle.fill")
-                .font(.system(size: 50))
-                .foregroundColor(.white)
-                .opacity(isAnimating ? 0.8 : 1)
-                .scaleEffect(isAnimating ? 1.1 : 1)
-                .animation(.easeInOut(duration: 1).repeatForever(), value: isAnimating)
-            
-            Text("Tap to watch AI assistant's message")
-                .font(AppStyle.TextStyle.caption)
-                .foregroundColor(.white)
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-                .background(.black.opacity(0.6))
-                .cornerRadius(20)
-        }
-        .onTapGesture {
-            withAnimation {
-                showingInstructions = false
-            }
-        }
-        .onAppear {
-            isAnimating = true
         }
     }
     
@@ -131,7 +125,7 @@ struct VideoInteractionView: View {
                 Button(action: {
                     requestCameraAndMicrophonePermissions { granted in
                         if granted {
-                            showingCamera = true // This triggers the camera sheet
+                            showingCamera = true
                         } else {
                             print("Camera or microphone access denied.")
                             showPermissionsAlert()
@@ -157,12 +151,54 @@ struct VideoInteractionView: View {
         }
     }
     
+    private func requestCameraAndMicrophonePermissions(completion: @escaping (Bool) -> Void) {
+        let cameraStatus = AVCaptureDevice.authorizationStatus(for: .video)
+        let microphoneStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+        
+        let requestCamera = {
+            AVCaptureDevice.requestAccess(for: .video) { videoGranted in
+                if videoGranted {
+                    AVCaptureDevice.requestAccess(for: .audio) { audioGranted in
+                        DispatchQueue.main.async {
+                            completion(videoGranted && audioGranted)
+                        }
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        completion(false)
+                    }
+                }
+            }
+        }
+        
+        switch (cameraStatus, microphoneStatus) {
+        case (.authorized, .authorized):
+            completion(true)
+        case (.notDetermined, _):
+            requestCamera()
+        case (_, .notDetermined):
+            AVCaptureDevice.requestAccess(for: .audio) { audioGranted in
+                if audioGranted {
+                    requestCamera()
+                } else {
+                    DispatchQueue.main.async {
+                        completion(false)
+                    }
+                }
+            }
+        default:
+            completion(false)
+            showPermissionsAlert()
+        }
+    }
+    
     private func showPermissionsAlert() {
         let alert = UIAlertController(
             title: "Permissions Required",
-            message: "Please enable camera and microphone access in Settings to record video responses.",
+            message: "Camera and microphone access is required to record your income verification video. Please enable them in Settings.",
             preferredStyle: .alert
         )
+        
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         alert.addAction(UIAlertAction(title: "Open Settings", style: .default) { _ in
             if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
@@ -173,27 +209,6 @@ struct VideoInteractionView: View {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let rootViewController = windowScene.windows.first?.rootViewController {
             rootViewController.present(alert, animated: true)
-        }
-    }
-    
-    private func requestCameraAndMicrophonePermissions(completion: @escaping (Bool) -> Void) {
-        let cameraStatus = AVCaptureDevice.authorizationStatus(for: .video)
-        let microphoneStatus = AVCaptureDevice.authorizationStatus(for: .audio)
-        
-        switch (cameraStatus, microphoneStatus) {
-        case (.authorized, .authorized):
-            completion(true)
-        case (.notDetermined, .notDetermined):
-            AVCaptureDevice.requestAccess(for: .video) { videoGranted in
-                AVCaptureDevice.requestAccess(for: .audio) { audioGranted in
-                    DispatchQueue.main.async {
-                        completion(videoGranted && audioGranted)
-                    }
-                }
-            }
-        default:
-            completion(false)
-            showPermissionsAlert()
         }
     }
 }

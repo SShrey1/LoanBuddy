@@ -40,19 +40,29 @@ struct OnboardingView: View {
             .tabViewStyle(.page(indexDisplayMode: .always))
             .indexViewStyle(.page(backgroundDisplayMode: .always))
             
-            // Skip button
-            if currentPage < pages.count - 1 {
-                VStack {
-                    Spacer()
-                    Button("Skip") {
+            // Skip button in top left corner
+            VStack {
+                HStack {
+                    Button(action: {
                         withAnimation {
                             hasSeenOnboarding = true
                         }
+                    }) {
+                        Text("Skip")
+                            .font(AppStyle.TextStyle.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color.white.opacity(0.9))
+                            .cornerRadius(20)
                     }
-                    .font(AppStyle.TextStyle.caption)
-                    .foregroundColor(.secondary)
-                    .padding(.bottom, 40)
+                    .padding(.leading)
+                    
+                    Spacer()
                 }
+                .padding(.top, 48)
+                
+                Spacer()
             }
         }
         .onAppear {
